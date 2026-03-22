@@ -21,7 +21,7 @@ def _build_train_tasks(task):
         for separate_train in task['separate_trains']:
             for group in task['groups']:
                 for dim in task['dims']:
-                    tasks.append({
+                    train_task = {
                         'type': 'train',
                         'optimizer': train_optimizer,
                         'evaluate_optimizer': evaluate_optimizer,
@@ -37,7 +37,11 @@ def _build_train_tasks(task):
                         'n_part': n_part,
                         'lr_critic': lr_critic,
                         'lr_actor': lr_actor,
-                    })
+                    }
+                    for optional_key in ('train_profile', 'train_al_type'):
+                        if optional_key in optimizer_pair:
+                            train_task[optional_key] = optimizer_pair[optional_key]
+                    tasks.append(train_task)
     return tasks
 
 

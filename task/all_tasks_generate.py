@@ -15,10 +15,14 @@ def all_tasks_generate():
         {
             'train_optimizer': TestpsoSwarm,
             'evaluate_optimizer': RlepsoSwarm,
+            'train_profile': 'original_rlepso',
+            'train_al_type': 'testpso',
         },
         {
             'train_optimizer': FiftyDimCCPsoSwarm,
             'evaluate_optimizer': RlCCPsoSwarm,
+            'train_profile': 'original_rlepso',
+            'train_al_type': 'ccpso_50d',
         },
     ]
 
@@ -31,7 +35,7 @@ def all_tasks_generate():
         'separate_trains': [False],
         'groups': [5],
         'train_max_episode': 200,
-        'train_max_steps': 200 * 100,
+        'train_max_steps': 8000,
         'dims': [50],
         'train_times': 1,
         'max_fe': int(1e4),

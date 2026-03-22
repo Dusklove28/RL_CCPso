@@ -84,6 +84,7 @@ class TestpsoEnv(Env):
         super().__init__(obs_shape=(1,), action_shape=(50 ,), action_low=-1, action_high=1)
 
         self.pso_swarm = None
+        self.optimizer = None
 
         self.fit_value = [0., 0., 0., 0., 0.]
 
@@ -137,6 +138,7 @@ class TestpsoEnv(Env):
             -100,
             {'max_fes': self.max_fe, 'group': 5},
         )
+        self.optimizer = self.pso_swarm
         # self.min_value = 1e-17
 
         self.fit_value = [0., 0., 0., 0., 0.]

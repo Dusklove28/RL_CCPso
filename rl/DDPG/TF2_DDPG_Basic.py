@@ -1,6 +1,5 @@
 from pathlib import Path
 
-import gym
 import random
 # import imageio
 import datetime
@@ -56,6 +55,15 @@ def update_target_weights(model, target_model, tau=0.005):
     for i in range(len(target_weights)):  # set tau% of target model to be new weights
         target_weights[i] = weights[i] * tau + target_weights[i] * (1 - tau)
     target_model.set_weights(target_weights)
+
+
+def _get_env_optimizer_name(env):
+    optimizer = getattr(env, 'optimizer', None)
+    if optimizer is None:
+        optimizer = getattr(env, 'pso_swarm', None)
+    if optimizer is None:
+        return env.__class__.__name__
+    return optimizer.__class__.__name__
 
 
 # Taken from https://github.com/openai/baselines/blob/master/baselines/ddpg/noise.py
@@ -226,11 +234,11 @@ class DDPG:
 
         done, episode, steps, epoch, total_reward = False, 0, 0, 0, 0
         cur_state = self.env.reset()
-        while episode < max_episodes and epoch < max_epochs:
+        while episode < max_episodes or epoch < max_epochs:
             if done:
                 episode += 1
                 print(F"episode {episode}: {total_reward} total reward, {steps} steps, {epoch} epochs "
-                      F"optimizer:{self.env.optimizer.__class__.__name__}")
+                      F"optimizer:{_get_env_optimizer_name(self.env)}")
 
                 # with summary_writer.as_default():
                 #     tf.summary.scalar('Main/episode_reward', total_reward, step=episode)
@@ -314,6 +322,8 @@ except:
     pass
 
 if __name__ == "__main__":
+    import gym
+
     gym_env = gym.make("CartPole-v1")
     try:
         # Ensure action bound is symmetric
