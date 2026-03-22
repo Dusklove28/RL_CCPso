@@ -4,7 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from env.NormalEnv import NormalEnv
-from rl.DDPG.TF2_DDPG_Basic import DDPG
 from train.ddpg import get_ddpg_object
 
 
@@ -14,6 +13,8 @@ class MatSwarm:
     obs_space = 3 * 5
 
     def __init__(self, n_run, n_part, show, fun, n_dim, pos_max, pos_min, config_dic):
+        if config_dic is None:
+            config_dic = {}
         if show:
             print('群初始化 参数：{}'.format(locals()))
         self.n_run = n_run
@@ -41,8 +42,6 @@ class MatSwarm:
         self.atom_history_best_fits = np.zeros(self.n_part) + np.inf
 
         self.fe_num = 0
-        if config_dic is None:
-            config_dic = {}
         self.fe_max = config_dic.get('max_fes', 10000)
         self.run_flag = True
         self.record_per_fe = 1000
@@ -56,10 +55,16 @@ class MatSwarm:
             self.name = f'{self.optimizer_name}-{model_name}'
             self.optimizer_name = self.name
 
-            gym_env = NormalEnv(show=False, obs_shape=(self.obs_space,),
-                                action_shape=(self.action_space * self.n_group,))
-            ddpg = get_ddpg_object(gym_env, )
-            print(ddpg.actor.summary())
+            gym_env = NormalEnv(
+                show=False,
+                obs_shape=(self.obs_space,),
+                action_shape=(self.action_space * self.n_group,),
+                n_dim=self.n_dim,
+                n_part=self.n_part,
+                max_fe=self.fe_max,
+                group=self.n_group,
+            )
+            ddpg = get_ddpg_object(gym_env, discrete=False)
             ddpg.load_actor(str(model))
 
             self.ddpg_actor = ddpg

@@ -226,7 +226,7 @@ class DDPG:
 
         done, episode, steps, epoch, total_reward = False, 0, 0, 0, 0
         cur_state = self.env.reset()
-        while episode < max_episodes or epoch < max_epochs:
+        while episode < max_episodes and epoch < max_epochs:
             if done:
                 episode += 1
                 print(F"episode {episode}: {total_reward} total reward, {steps} steps, {epoch} epochs "
@@ -239,13 +239,13 @@ class DDPG:
                 # summary_writer.flush()
                 self.noise.reset()
 
-                if steps >= max_steps:
+                if steps >= max_steps and task_path is not None:
                     print("episode {}, reached max steps".format(episode))
                     self.save_model(task_path.joinpath(f"ddpg_actor_episode{episode}_round{train_num}.h5"),
                                     task_path.joinpath(f"ddpg_critic_episode{episode}_round{train_num}.h5"))
 
                 done, cur_state, steps, total_reward = False, self.env.reset(), 0, 0
-                if episode % save_freq == 0:
+                if episode % save_freq == 0 and task_path is not None:
                     self.save_model(task_path.joinpath(f"ddpg_actor_episode{episode}_round{train_num}.h5"),
                                     task_path.joinpath(f"ddpg_critic_episode{episode}_round{train_num}.h5"))
 
@@ -274,8 +274,9 @@ class DDPG:
             #
             # summary_writer.flush()
 
-        self.save_model(task_path.joinpath(f"ddpg_actor_final_round{train_num}.h5"),
-                        task_path.joinpath(f"ddpg_critic_final_round{train_num}.h5"))
+        if task_path is not None:
+            self.save_model(task_path.joinpath(f"ddpg_actor_final_round{train_num}.h5"),
+                            task_path.joinpath(f"ddpg_critic_final_round{train_num}.h5"))
 
     def policy(self, state):
         a = self.act(state, add_noise=False)

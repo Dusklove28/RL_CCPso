@@ -36,7 +36,8 @@ def evluate_optimizer(task):
     if max_fe:
         config_dic['max_fes'] = max_fe
 
-    optimizer = cls(n_run=260, n_part=npart, show=False, fun=test_fun, n_dim=dim, pos_max=100, pos_min=-100,
+    n_run = max(1, int(config_dic.get('max_fes', 20000) / npart))
+    optimizer = cls(n_run=n_run, n_part=npart, show=False, fun=test_fun, n_dim=dim, pos_max=100, pos_min=-100,
                     config_dic=config_dic)
     optimizer.run()
 

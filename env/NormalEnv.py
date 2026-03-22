@@ -40,7 +40,7 @@ class function_wrapper:
 
 class NormalEnv(Env):
     def __init__(self, obs_shape=(1,), action_shape=(50,), action_low=-1, action_high=1, show=False,
-                 target_optimizer=None, fun_nums=None, n_part=100, max_fe=1e4):
+                 target_optimizer=None, fun_nums=None, n_part=100, max_fe=1e4, n_dim=50, group=1):
         super().__init__(obs_shape=obs_shape, action_shape=action_shape, action_low=action_low, action_high=action_high)
         self.target_optimizer = target_optimizer
         self.optimizer = None
@@ -55,22 +55,23 @@ class NormalEnv(Env):
         self.run_time = 0
         self.n_part = n_part
         self.max_fe = max_fe
+        self.n_dim = n_dim
+        self.group = group
 
     def reset(self):
         """
 
         :return: next_state
         """
-        n_dim = 50
-        self.n_run = n_run = 1000
-        n_part = 40
+        n_dim = self.n_dim
+        self.n_run = n_run = max(1, int(self.max_fe / self.n_part))
         show = self.show_flag
 
         self.fun_num = random.choice(self.fun_nums)
 
-        fun_class = function_wrapper(50, self.fun_num)
+        fun_class = function_wrapper(n_dim, self.fun_num)
         self.optimizer = self.target_optimizer(n_run, self.n_part, show, fun_class.fun, n_dim, 100, -100,
-                                               {'max_fes': self.max_fe})
+                                               {'max_fes': self.max_fe, 'group': self.group})
 
         self.fit_value = [0., 0., 0., 0., 0.]
         self.step_num = 0
@@ -101,7 +102,12 @@ class NormalEnv(Env):
         none
         """
 
-        action = action.numpy()
+        if action is None:
+            action = np.zeros(self.action_space.shape[0], dtype=float)
+        elif hasattr(action, 'numpy'):
+            action = action.numpy()
+        else:
+            action = np.asarray(action)
         done = False
         self.step_num += 1
 

@@ -101,8 +101,9 @@ class TestpsoEnv(Env):
         :return: next_state
         """
         n_dim = 50
-        self.n_run = n_run = 1000
+        self.max_fe = 20000
         n_part = 40
+        self.n_run = n_run = max(1, int(self.max_fe / n_part))
         show = self.show_flag
         pos_max = np.array((10, 10))
         pos_min = np.array((-10, -10))
@@ -126,7 +127,16 @@ class TestpsoEnv(Env):
 
         fun_class = function_wrapper(50, fun_num)
         # self.pso_swarm = targetSwarm(n_run, n_part, show, fun_class.fun, n_dim, 100, -100, {'max_fes': 20000})
-        self.pso_swarm = targetSwarm(n_run, n_part, show, fun_class.fun, n_dim, 100, -100, {'max_fes': 20000})
+        self.pso_swarm = targetSwarm(
+            n_run,
+            n_part,
+            show,
+            fun_class.fun,
+            n_dim,
+            100,
+            -100,
+            {'max_fes': self.max_fe, 'group': 5},
+        )
         # self.min_value = 1e-17
 
         self.fit_value = [0., 0., 0., 0., 0.]
@@ -158,7 +168,12 @@ class TestpsoEnv(Env):
         none
         """
 
-        action = action.numpy()
+        if action is None:
+            action = np.zeros(self.action_space.shape[0], dtype=float)
+        elif hasattr(action, 'numpy'):
+            action = action.numpy()
+        else:
+            action = np.asarray(action)
         done = False
         self.step_num += 1
 

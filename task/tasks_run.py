@@ -281,8 +281,16 @@ def single_train_task_run(task, mq=None):
     lr_critic = task.get('lr_critic', 1e-7)
     lr_actor = task.get('lr_actor', 1e-9)
     # 训练过程
-    gym_env = NormalEnv(obs_shape=(optimizer.obs_space,), action_shape=(optimizer.action_space * group,),
-                        target_optimizer=optimizer, fun_nums=fun_nums, max_fe=max_fe, n_part=n_part)
+    gym_env = NormalEnv(
+        obs_shape=(optimizer.obs_space,),
+        action_shape=(optimizer.action_space * group,),
+        target_optimizer=optimizer,
+        fun_nums=fun_nums,
+        max_fe=max_fe,
+        n_part=n_part,
+        n_dim=dim,
+        group=group,
+    )
 
     assert (gym_env.action_space.high == -gym_env.action_space.low)
     is_discrete = False

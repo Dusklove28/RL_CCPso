@@ -175,7 +175,7 @@ class DDPG:
         done, episode, steps, epoch, total_reward = False, 0, 0, 0, 0
         cur_state = self.env.reset()
         self.update_states(cur_state)  # update stored states
-        while episode < max_episodes or epoch < max_epochs:
+        while episode < max_episodes and epoch < max_epochs:
             if done:
                 episode += 1
                 print("episode {}: {} total reward, {} steps, {} epochs".format(
@@ -259,4 +259,3 @@ if __name__ == "__main__":
     ddpg.train(max_episodes=50)
     # rewards = ddpg.test()
     # print("Total rewards: ", rewards)
-

@@ -3,6 +3,10 @@ from matAgent.testpso import TestpsoSwarm  # 直接继承原版，复用它的 C
 
 
 class FiftyDimCCPsoSwarm(TestpsoSwarm):
+    optimizer_name = 'CCPSO_50D'
+    action_space = 10
+    obs_space = 1
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = '50D_CC_PSO'
@@ -10,6 +14,8 @@ class FiftyDimCCPsoSwarm(TestpsoSwarm):
         self.xs_old = self.xs.copy()
 
     def run_once(self, actions):
+        if actions is None:
+            actions = np.zeros(self.action_space * self.n_group)
         if self.show:
             print('{}|best fit:{}'.format(self.fe_num / self.fe_max, self.history_best_fit))
 
@@ -18,8 +24,11 @@ class FiftyDimCCPsoSwarm(TestpsoSwarm):
         for i in range(self.n_part):
             fdr_deta_fitness = self.atom_history_best_fits[i] - self.atom_history_best_fits
 
-            # 完全复用原版的动作切片逻辑 (10 个参数控制一个粒子)
-            action = actions[i % 5 * 10: i % 5 * 10 + 10]
+            # 和训练时的 group 配置保持一致
+            action = actions[
+                i % self.n_group * self.action_space:
+                i % self.n_group * self.action_space + self.action_space
+            ]
 
             w = action[7] * 0.4 + 0.5
             r1 = action[1] * 1.5 + 1.5

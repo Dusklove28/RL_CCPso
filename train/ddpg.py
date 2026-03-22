@@ -3,24 +3,44 @@ from rl.DDPG.TF2_DDPG_Basic import DDPG
 import numpy as np
 
 
+DEFAULT_ACTOR_UNITS = (16,)
+DEFAULT_CRITIC_UNITS = (8, 16, 32)
+
+
 def get_ddpg_object(
         env,
         discrete=False,
-        use_priority=False,
+        use_priority=True,
         lr_actor=1e-5,
         lr_critic=1e-3,
-        actor_units=(24, 16),
-        critic_units=(24, 16),
+        actor_units=None,
+        critic_units=None,
         noise='norm',
         sigma=0.15,
         tau=0.125,
         gamma=0.85,
         batch_size=64,
         memory_cap=100000):
-    # 【核心】：框架真正调用的是这里。
-    # 保持极小的学习率 1e-7 和 1e-9，保证对比实验的公平性。
-    return DDPG(env, discrete=discrete, memory_cap=memory_cap, actor_units=(16, 32, 32, 32, 64, 64),
-                critic_units=(8, 16, 32, 32, 16, 8), use_priority=True, lr_critic=1e-7, lr_actor=1e-9)
+    if actor_units is None:
+        actor_units = DEFAULT_ACTOR_UNITS
+    if critic_units is None:
+        critic_units = DEFAULT_CRITIC_UNITS
+
+    return DDPG(
+        env,
+        discrete=discrete,
+        memory_cap=memory_cap,
+        actor_units=actor_units,
+        critic_units=critic_units,
+        use_priority=use_priority,
+        lr_critic=lr_critic,
+        lr_actor=lr_actor,
+        noise=noise,
+        sigma=sigma,
+        tau=tau,
+        gamma=gamma,
+        batch_size=batch_size,
+    )
 
 
 def train():
@@ -44,8 +64,16 @@ def train():
         logger.info('Discrete Action Space')
 
     # 保持原版配置
-    ddpg = DDPG(gym_env, discrete=is_discrete, memory_cap=10000000, actor_units=(16,),
-                critic_units=(8, 16, 32), use_priority=True, lr_critic=1e-7, lr_actor=1e-9)
+    ddpg = get_ddpg_object(
+        gym_env,
+        discrete=is_discrete,
+        memory_cap=10000000,
+        actor_units=DEFAULT_ACTOR_UNITS,
+        critic_units=DEFAULT_CRITIC_UNITS,
+        use_priority=True,
+        lr_critic=1e-7,
+        lr_actor=1e-9,
+    )
 
     max_episodes = 200
     max_steps = 1000
