@@ -162,7 +162,7 @@ if __name__ == '__main__':
     res = 'restart'
     
     # 强烈建议：先用 2 个进程探路，不要一上来就 6 个！
-    processes_count = 4
+    processes_count = 2
     
     while res == 'restart':
         res = main(processes_count)

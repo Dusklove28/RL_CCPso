@@ -1,7 +1,5 @@
 import numpy as np
-
 from matAgent.ccpso_50d import FiftyDimCCPsoSwarm
-
 
 class RlCCPsoSwarm(FiftyDimCCPsoSwarm):
     optimizer_name = 'RL_CCPSO50D'
@@ -16,7 +14,9 @@ class RlCCPsoSwarm(FiftyDimCCPsoSwarm):
         self.name = 'RL-CCPso50D'
         self.optimizer_name = self.name
 
-    def run_once(self, action=None):
+    # 【修复点】：action -> actions, 加上 **kwargs
+    def run_once(self, actions=None, **kwargs):
         state = self.get_state()
-        action = self.ddpg_actor.policy(state)
-        super().run_once(action.numpy())
+        my_action = self.ddpg_actor.policy(state)
+        # 向下传递时，使用父类规定的 actions
+        super().run_once(actions=my_action.numpy())

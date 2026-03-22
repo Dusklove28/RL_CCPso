@@ -21,13 +21,15 @@ class RlepsoSwarm(TestpsoSwarm):
         self.name = f'RLEPSO-{model_name}'
         self.optimizer_name = self.name
 
-    def run_once(self, action=np.zeros(10)):
+   # 【修复点】：action -> actions, 加上 **kwargs
+    def run_once(self, actions=None, **kwargs):
         state = self.get_state()
-        action = self.ddpg_actor.policy(state)
+        my_action = self.ddpg_actor.policy(state)
         if self.show:
-            print(np.mean(np.abs(action)))
-            print(action[:10])
-        super().run_once(action.numpy())
+            print(np.mean(np.abs(my_action)))
+            print(my_action[:10])
+        # 向下传递时，使用父类规定的 actions
+        super().run_once(actions=my_action.numpy())
 
 
 def fun2(x):

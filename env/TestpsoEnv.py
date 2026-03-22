@@ -230,12 +230,13 @@ class TestpsoEnv(Env):
         if self.show_flag:
             print('action:{} next_state:{} reward:{} done:{} best:{}'.format(action, next_state, reward, done,
                                                                              self.pso_swarm.history_best_fit))
-        max_steps = 20000 // 40
-        progress_pct = (self.step_num / max_steps) * 100
+        if done:
+            max_steps = 20000 // 40
+            progress_pct = (self.step_num / max_steps) * 100
 
-        res = (f"[Step: {self.step_num}/{max_steps} ({progress_pct:.1f}%)] "
-               f"测试函数: {self.fun_num} | 目标值: {self.min_value} | 最终结果: {self.pso_swarm.history_best_fit:.4e}")
+            res = (f"[Step: {self.step_num}/{max_steps} ({progress_pct:.1f}%)] "
+                   f"测试函数: {self.fun_num} | 目标值: {self.min_value} | 最终结果: {self.pso_swarm.history_best_fit:.4e}")
 
-        # 使用 logger 输出，不仅有时间戳，还会自动写入文件
-        logger.info(res)
+            # 使用 logger 输出，每一局只输出 1 条！200 局就只输出 200 条！
+            logger.info(res)
         return np.array(next_state), reward, done, None
