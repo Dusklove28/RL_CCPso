@@ -15,13 +15,16 @@ def _build_train_tasks(task):
     lr_critic = task.get('lr_critic', 1e-7)
     lr_actor = task.get('lr_actor', 1e-9)
 
-    for optimizer in task['evaluate_optimizers']:
+    for optimizer_pair in task['rl_optimizer_pairs']:
+        train_optimizer = optimizer_pair['train_optimizer']
+        evaluate_optimizer = optimizer_pair['evaluate_optimizer']
         for separate_train in task['separate_trains']:
             for group in task['groups']:
                 for dim in task['dims']:
                     tasks.append({
                         'type': 'train',
-                        'optimizer': optimizer,
+                        'optimizer': train_optimizer,
+                        'evaluate_optimizer': evaluate_optimizer,
                         'group': group,
                         'train_max_steps': task['train_max_steps'],
                         'train_max_episode': task['train_max_episode'],
@@ -40,6 +43,10 @@ def _build_train_tasks(task):
 
 def _build_compare_tasks(task, train_tasks, train_results):
     compare_task_map = {}
+    baseline_fun_model = {
+        f_num: [None]
+        for f_num in task['evaluate_function']
+    }
 
     for train_task, train_result in zip(train_tasks, train_results):
         key = (
@@ -48,9 +55,16 @@ def _build_compare_tasks(task, train_tasks, train_results):
             train_task['dim'],
         )
         if key not in compare_task_map:
-            compare_task_map[key] = []
+            optimizer_model_list = []
+            for optimizer in task['baseline_optimizers']:
+                optimizer_model_list.append({
+                    'optimizer': optimizer,
+                    'fun_model': copy.deepcopy(baseline_fun_model),
+                })
+            compare_task_map[key] = optimizer_model_list
+
         compare_task_map[key].append({
-            'optimizer': train_task['optimizer'],
+            'optimizer': train_task['evaluate_optimizer'],
             'fun_model': train_result['result'],
         })
 

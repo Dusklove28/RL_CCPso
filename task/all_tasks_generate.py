@@ -1,17 +1,32 @@
 from matAgent.ccpso_50d import FiftyDimCCPsoSwarm
+from matAgent.clpso import ClpsoSwarm
+from matAgent.pso import PsoSwarm
+from matAgent.rlepso import RlepsoSwarm
+from matAgent.rl_ccpso_eval import RlCCPsoSwarm
 from matAgent.testpso import TestpsoSwarm
 
 
 def all_tasks_generate():
-    evaluate_optimizers = [
-        TestpsoSwarm,
-        FiftyDimCCPsoSwarm,
+    baseline_optimizers = [
+        PsoSwarm,
+        ClpsoSwarm,
+    ]
+    rl_optimizer_pairs = [
+        {
+            'train_optimizer': TestpsoSwarm,
+            'evaluate_optimizer': RlepsoSwarm,
+        },
+        {
+            'train_optimizer': FiftyDimCCPsoSwarm,
+            'evaluate_optimizer': RlCCPsoSwarm,
+        },
     ]
 
     task = {
         'type': 'top',
-        'evaluate_optimizers': evaluate_optimizers,
-        'evaluate_function': [1, 5, 10, 20],
+        'baseline_optimizers': baseline_optimizers,
+        'rl_optimizer_pairs': rl_optimizer_pairs,
+        'evaluate_function': list(range(1, 29)),
         'runtimes': 5,
         'separate_trains': [False],
         'groups': [5],
