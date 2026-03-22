@@ -1,3 +1,4 @@
+from log import logger
 from env.EnvBase import Env
 import numpy as np
 
@@ -212,11 +213,12 @@ class TestpsoEnv(Env):
         if self.show_flag:
             print('action:{} next_state:{} reward:{} done:{} best:{}'.format(action, next_state, reward, done,
                                                                              self.pso_swarm.history_best_fit))
-        if done:
-            res = f'迭代次数：{self.step_num},测试函数:{self.fun_num}，函数目标值：{self.min_value},运行结果：{self.pso_swarm.history_best_fit}'
-            print(res)
-            if self.show_flag:
-                print('迭代次数：{}'.format(self.step_num))
-            with open('res2.json', 'a', encoding='utf-8') as f:
-                f.write(f'{res}\n')
+        max_steps = 20000 // 40
+        progress_pct = (self.step_num / max_steps) * 100
+
+        res = (f"[Step: {self.step_num}/{max_steps} ({progress_pct:.1f}%)] "
+               f"测试函数: {self.fun_num} | 目标值: {self.min_value} | 最终结果: {self.pso_swarm.history_best_fit:.4e}")
+
+        # 使用 logger 输出，不仅有时间戳，还会自动写入文件
+        logger.info(res)
         return np.array(next_state), reward, done, None

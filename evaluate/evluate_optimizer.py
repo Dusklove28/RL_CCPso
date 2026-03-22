@@ -36,13 +36,8 @@ def evluate_optimizer(config):
             ans = cec_functions.Y(x, f_num)
         return np.array(ans)
 
-    # 【核心修改点】：根据当前的算法类名，动态挂载对应的训练好的模型路径！
-    # 请务必把下面的路径替换为你本地真实的 .h5 文件绝对路径
-    model_path = None
-    if cls.__name__ == 'RlCCPsoSwarm':
-        model_path = r"D:\develop\你的路径\ddpg_actor_ccpso50d.h5"
-    elif cls.__name__ == 'RlepsoSwarm':
-        model_path = r"D:\develop\你的路径\ddpg_actor_testpso.h5"
+    # 框架，直接从 config 里拿模型路径！
+    model_path = config.get('model')
 
     config_dic = {}
     if model_path:

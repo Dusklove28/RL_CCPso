@@ -1,8 +1,6 @@
+from log import logger  # 引入我们自定义的日志器
 from rl.DDPG.TF2_DDPG_Basic import DDPG
 import numpy as np
-
-
-# print('?')
 
 
 def get_ddpg_object(
@@ -19,65 +17,50 @@ def get_ddpg_object(
         gamma=0.85,
         batch_size=64,
         memory_cap=100000):
+    # 【核心】：框架真正调用的是这里。
+    # 保持极小的学习率 1e-7 和 1e-9，保证对比实验的公平性。
     return DDPG(env, discrete=discrete, memory_cap=memory_cap, actor_units=(16, 32, 32, 32, 64, 64),
-                critic_units=(8, 16, 32, 32, 16, 8), use_priority=True, lr_critic=lr_critic, lr_actor=lr_actor)
+                critic_units=(8, 16, 32, 32, 16, 8), use_priority=True, lr_critic=1e-7, lr_actor=1e-9)
 
 
 def train():
+    """
+    注意：这个函数只是供你如果不走 task 框架时，本地临时跑着玩、查 Bug 用的。
+    自动化框架并不会执行这里。但为了代码严谨，我们把它改对。
+    """
     from env.TestpsoEnv import TestpsoEnv
-    print('train')
-    gym_env = TestpsoEnv(show=False, al_type='ccpso_50d')
+
+    ALGO_TYPE = 'ccpso_50d'
+    logger.info(f"==== 本地调试训练，当前挂载算法: {ALGO_TYPE} ====")
+
+    gym_env = TestpsoEnv(show=False, al_type=ALGO_TYPE)
+
     try:
-        # Ensure action bound is symmetric
         assert (gym_env.action_space.high == -gym_env.action_space.low)
         is_discrete = False
-        print('Continuous Action Space')
+        logger.info('Continuous Action Space')
     except AttributeError:
         is_discrete = True
-        print('Discrete Action Space')
-    # ddpg = DDPG(gym_env, discrete=is_discrete, memory_cap=10000000, actor_units=(16, 32, 64),
-    #             critic_units=(8, 16, 32), use_priority=True, lr_critic=1e-7, lr_actor=1e-9)
-    # 提高学习率 lr_critic = 1e-3, lr_actor = 1e-4 避免学不到东西。 暂未修改
+        logger.info('Discrete Action Space')
 
+    # 保持原版配置
     ddpg = DDPG(gym_env, discrete=is_discrete, memory_cap=10000000, actor_units=(16,),
                 critic_units=(8, 16, 32), use_priority=True, lr_critic=1e-7, lr_actor=1e-9)
-    ddpg.train(max_episodes=10000, max_steps=1000)
+
+    max_episodes = 200
+    max_steps = 1000
+    logger.info(f"开启底层训练循环，总回合数: {max_episodes} ...")
+    ddpg.train(max_episodes=max_episodes, max_steps=max_steps)
 
 
 def test():
-    from env.PsoEnv import PsoEnv
-
-    gym_env = PsoEnv(show=False)
-    try:
-        # Ensure action bound is symmetric
-        assert (gym_env.action_space.high == -gym_env.action_space.low)
-        is_discrete = False
-        print('Continuous Action Space')
-    except AttributeError:
-        is_discrete = True
-        print('Discrete Action Space')
-
-    ddpg = DDPG(gym_env, discrete=is_discrete)
-    # ddpg.load_critic("ddpg_critic_episode124.h5")
-    # ddpg.load_actor("actor01.h5")
-
-    step_nums = []
-    for i in range(10):
-        reward, step_num = ddpg.test()
-        step_nums.append(step_num)
-        print('step:{}'.format(step_num))
-    print('trained mean:{}'.format(np.mean(step_nums)))
-
-    step_nums = []
-    for i in range(10):
-        step_num = gym_env.test()
-        step_nums.append(step_num)
-        print('step:{}'.format(step_num))
-    print('origin mean:{}'.format(np.mean(step_nums)))
-
-    # ddpg.train(max_episodes=1000)
+    """
+    既然我们全面使用 task 自动化评估框架 (evluate_optimizer.py)，
+    这个本地简陋的测试函数直接 pass 废弃即可，免得产生误导。
+    """
+    pass
 
 
 if __name__ == "__main__":
-    print('start')
+    logger.info('独立运行 ddpg.py 测试启动')
     train()
