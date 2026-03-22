@@ -19,6 +19,11 @@ def all_tasks_generate():
     # 4. 精选 4 个代表性测试函数（比如：1是单峰，20是多峰）
     evaluate_function = [1, 5, 10, 20]
 
+    separate_trains = [False]
+    groups = [5]
+    train_max_episode = 200
+    train_max_steps = train_max_episode * 100
+    
     # 其余参数（如果这个脚本仅用于触发 evaluate，训练参数其实用不上，写着防报错即可）
     task = {'type': 'top',
             'evaluate_optimizers': evaluate_optimizers,
