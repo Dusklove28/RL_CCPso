@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 
 from env.NormalEnv import NormalEnv
 from train.ddpg import get_ddpg_object
+from utils.tensor_utils import to_numpy_array
 
 
 class MatSwarm:
@@ -64,7 +65,7 @@ class MatSwarm:
                 max_fe=self.fe_max,
                 group=self.n_group,
             )
-            ddpg = get_ddpg_object(gym_env, discrete=False)
+            ddpg = get_ddpg_object(gym_env, discrete=False, device='cpu')
             ddpg.load_actor(str(model))
 
             self.ddpg_actor = ddpg
@@ -95,7 +96,7 @@ class MatSwarm:
                 actions = None
                 if self.ddpg_actor:
                     state = self.get_state()
-                    actions = self.ddpg_actor.policy(state).numpy()
+                    actions = to_numpy_array(self.ddpg_actor.policy(state))
                 if self.show:
                     print('群运行中：{}'.format(self.step_num))
                 self.run_once(actions=actions)

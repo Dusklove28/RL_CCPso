@@ -1,5 +1,6 @@
 import numpy as np
 from matAgent.ccpso_50d import FiftyDimCCPsoSwarm
+from utils.tensor_utils import to_numpy_array
 
 class RlCCPsoSwarm(FiftyDimCCPsoSwarm):
     optimizer_name = 'RL_CCPSO50D'
@@ -19,4 +20,4 @@ class RlCCPsoSwarm(FiftyDimCCPsoSwarm):
         state = self.get_state()
         my_action = self.ddpg_actor.policy(state)
         # 向下传递时，使用父类规定的 actions
-        super().run_once(actions=my_action.numpy())
+        super().run_once(actions=to_numpy_array(my_action))

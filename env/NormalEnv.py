@@ -4,6 +4,7 @@ import numpy as np
 from functions import CEC_functions
 
 import random
+from utils.tensor_utils import to_numpy_array
 
 
 def fit(x):
@@ -104,10 +105,8 @@ class NormalEnv(Env):
 
         if action is None:
             action = np.zeros(self.action_space.shape[0], dtype=float)
-        elif hasattr(action, 'numpy'):
-            action = action.numpy()
         else:
-            action = np.asarray(action)
+            action = np.asarray(to_numpy_array(action))
         done = False
         self.step_num += 1
 

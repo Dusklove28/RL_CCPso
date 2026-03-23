@@ -1,8 +1,11 @@
 import os
 import json
 import numpy as np
-import tensorflow as tf
 import matplotlib.pyplot as plt
+try:
+    import tensorflow as tf
+except ImportError:
+    tf = None
 
 from sklearn.linear_model import LinearRegression
 import h5py
@@ -11,9 +14,15 @@ from pathlib import Path
 from matAgent.baseAgent import sin_encode, MatSwarm
 from matAgent.pso import PsoSwarm
 from matAgent.hpso_tvac import HpsotvacSwarm
+from utils.tensor_utils import to_numpy_array
 
 if not os.path.exists('data/img/'):
     os.mkdir('data/img/')
+
+
+def _ensure_tensorflow():
+    if tf is None:
+        raise RuntimeError('这个调试脚本里的 Keras 模型可视化函数仍依赖 TensorFlow，请先安装 TensorFlow 或改用 .pth + DDPG 加载流程。')
 
 def fun(x):
     x2 = np.power(x, 2)
@@ -72,6 +81,7 @@ def plot(model, jinddu=10, title=None):
 
 
 def task_print():
+    _ensure_tensorflow()
     model_fn = 'data/task/ac109973e3f51718a313ed9ba2cfa9eb/ddpg_actor_episode50_round0.h5'
     tasks = ['bbead8669f29fbc42c75d2487a3009d7', ]
     # model = tf.keras.models.load_model(model_fn)
@@ -91,6 +101,7 @@ def task_print():
 
 
 def show_process_model():
+    _ensure_tensorflow()
     model_fn = r'D:\paper\rlma\model\0406单层sin\ddpg_actor_episode120_round0.h5'
 
     model = tf.keras.models.load_model(str(model_fn), custom_objects={'leaky_relu': tf.nn.leaky_relu})
@@ -121,14 +132,13 @@ def show_process_model():
     plt.clf()
 
 
-def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_episode300_round0.h5', jingdu=100,
+def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_episode300_round0.pth', jingdu=100,
                optimizerClass=PsoSwarm):
     # model_fn = r'D:\paper\rlma\model\0406单层sin\ddpg_actor_episode120_round0.h5'
     # model_fn = r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_final_round0.h5'
     optimizer = None
     if optimizerClass:
         optimizer = optimizerClass(n_run=260, n_part=100, show=False, fun=fun, n_dim=30, pos_max=100, pos_min=-100, config_dic={'model': model_fn, 'group': 5})
-    model = tf.keras.models.load_model(str(model_fn), custom_objects={'leaky_relu': tf.nn.leaky_relu})
     # print(model.summary())
     # print(model.layers[-2].activation)
     # print(model.get_layer('L5').outputs)
@@ -149,7 +159,7 @@ def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_
         optimizer.last_best_update_fe = optimizer.fe_num
         optimizer.diversity = 0
         state = optimizer.get_state()
-        actions = optimizer.ddpg_actor.policy(state).numpy()
+        actions = to_numpy_array(optimizer.ddpg_actor.policy(state))
         w, c1, c2 = optimizer.get_w_c1_c2(actions, 0)
 
         xs.append(i / jingdu)
@@ -174,7 +184,7 @@ def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_
         optimizer.last_best_update_fe = optimizer.fe_num - optimizer.fe_max * (i / jingdu)
         optimizer.diversity = 0
         state = optimizer.get_state()
-        actions = optimizer.ddpg_actor.policy(state).numpy()
+        actions = to_numpy_array(optimizer.ddpg_actor.policy(state))
         w, c1, c2 = optimizer.get_w_c1_c2(actions, 0)
         xs.append(i / jingdu)
         ws.append(w)
@@ -198,7 +208,7 @@ def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_
         optimizer.last_best_update_fe = optimizer.fe_num
         optimizer.diversity = i / jingdu
         state = optimizer.get_state()
-        actions = optimizer.ddpg_actor.policy(state).numpy()
+        actions = to_numpy_array(optimizer.ddpg_actor.policy(state))
         w, c1, c2 = optimizer.get_w_c1_c2(actions, 0)
         xs.append(i / jingdu)
         ws.append(w)
@@ -222,7 +232,7 @@ def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_
         optimizer.last_best_update_fe = optimizer.fe_num
         optimizer.diversity = i / jingdu
         state = optimizer.get_state()
-        actions = optimizer.ddpg_actor.policy(state).numpy()
+        actions = to_numpy_array(optimizer.ddpg_actor.policy(state))
         w, c1, c2 = optimizer.get_w_c1_c2(actions, 0)
         xs.append(i / jingdu)
         ws.append(w)
@@ -246,7 +256,7 @@ def show_model(model_fn=r'data/task/4727d73b85fd578c3caa307bfc042bd1/ddpg_actor_
         optimizer.last_best_update_fe = optimizer.fe_num
         optimizer.diversity = i / jingdu
         state = optimizer.get_state()
-        actions = optimizer.ddpg_actor.policy(state).numpy()
+        actions = to_numpy_array(optimizer.ddpg_actor.policy(state))
         w, c1, c2 = optimizer.get_w_c1_c2(actions, 0)
         xs.append(i / jingdu)
         ws.append(w)
@@ -404,7 +414,7 @@ if __name__ == '__main__':
     # # # 线性拟合评分(list(path.glob('ddpg_actor*.h5')))
     # 线性拟合评分(list(path.glob('*/ddpg_actor*.h5')))
     # p = Path(r'data\cache\task\d80cc59a50cbbd7b1df29ff75a95137f\ddpg_actor_round0_episode420.h5')
-    p = Path(r'D:\jianguoyun\我的坚果云\paper\autoTrain\论文所需结果\调整结果的有效性实验\用于diversity的数据\ddpg_actor_round3_final.h5')
+    p = Path(r'D:\jianguoyun\我的坚果云\paper\autoTrain\论文所需结果\调整结果的有效性实验\用于diversity的数据\ddpg_actor_round3_final.pth')
     data = show_model(p, jingdu=20)
     with open('pso.json', 'w') as f:
         json.dump(data, f)

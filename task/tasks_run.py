@@ -274,7 +274,7 @@ def single_train_task_run(task, mq=None):
     task_dir = TASK_PATH.joinpath(f'{task_md5}/')
 
     for train_index in range(task['train_num']):
-        if os.path.exists(task_dir.joinpath(f"ddpg_actor_final_round{train_index}.h5")):
+        if os.path.exists(task_dir.joinpath(f"ddpg_actor_final_round{train_index}.pth")):
             continue
 
         ddpg = get_ddpg_object(
@@ -303,7 +303,7 @@ def single_train_task_run(task, mq=None):
         'max_fe': max_fe,
         'n_part': task['n_part'],
     }
-    for model in task_dir.glob('ddpg_actor*.h5'):
+    for model in task_dir.glob('ddpg_actor*.pth'):
         new_task['evaluate_optimizers'].append({
             'optimizer': optimizer,
             'model': model,

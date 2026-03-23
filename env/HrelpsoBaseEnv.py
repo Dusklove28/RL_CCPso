@@ -5,6 +5,7 @@ from functions import CEC_functions
 from matAgent.hrlepso_base import HrlepsoBaseSwarm
 
 import random
+from utils.tensor_utils import to_numpy_array
 
 a = '''
 -266.0531289
@@ -142,7 +143,7 @@ class HrlepsoEnv(Env):
         none
         """
 
-        action = action.numpy()
+        action = np.asarray(to_numpy_array(action))
         done = False
         self.step_num += 1
 

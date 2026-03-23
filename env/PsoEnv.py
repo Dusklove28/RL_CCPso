@@ -3,6 +3,7 @@ import numpy as np
 from agent.pso import PsoSwarm
 from target_function import *
 import random
+from utils.tensor_utils import to_numpy_array
 
 
 def fit(x):
@@ -78,7 +79,7 @@ class PsoEnv(Env):
         if init:
             pass
         else:
-            action = action.numpy()
+            action = np.asarray(to_numpy_array(action))
         done = False
         self.step_num += 1
 

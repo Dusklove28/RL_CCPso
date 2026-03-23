@@ -1,5 +1,5 @@
 from log import logger
-from rl.DDPG.TF2_DDPG_Basic import DDPG
+from rl.DDPG.PT_DDPG_Basic import DDPG
 
 
 ORIGINAL_RLEPSO_ACTOR_UNITS = (16, 32, 32, 32, 64, 64)
@@ -21,7 +21,8 @@ def build_original_rlepso_ddpg(
         tau=0.125,
         gamma=0.85,
         batch_size=64,
-        memory_cap=100000):
+        memory_cap=100000,
+        device='auto'):
     return DDPG(
         env,
         discrete=discrete,
@@ -36,6 +37,7 @@ def build_original_rlepso_ddpg(
         tau=tau,
         gamma=gamma,
         batch_size=batch_size,
+        device=device,
     )
 
 
@@ -72,7 +74,8 @@ def get_ddpg_object(
         tau=0.125,
         gamma=0.85,
         batch_size=64,
-        memory_cap=100000):
+        memory_cap=100000,
+        device='auto'):
     # Keep RL_testpso on its original training settings.
     return build_original_rlepso_ddpg(
         env,
@@ -83,6 +86,7 @@ def get_ddpg_object(
         gamma=gamma,
         batch_size=batch_size,
         memory_cap=memory_cap,
+        device=device,
     )
 
 
