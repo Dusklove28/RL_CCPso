@@ -1,14 +1,4 @@
 import os
-import numpy as np
-
-# --- 魔法补丁：解决老代码 numpy 版本不兼容问题 ---
-np.int = int
-np.float = float
-np.bool = bool
-np.object = object
-
-
-# --------------------------------------------------
 import time
 from multiprocessing.dummy import freeze_support
 from display.top_task_result_display import top_task_result_display
@@ -25,7 +15,6 @@ from utils.task_hash import get_task_hash
 from log import logger
 import psutil
 
-mem = psutil.virtual_memory()
 task_progress = {}
 
 
@@ -79,7 +68,8 @@ def main(processes=1):
         run_epoch += 1
         if run_epoch % 10 == 0:
             print_task_progress()
-            if mem.available < 5 * 1024 * 1024 * 1024:
+            mem = psutil.virtual_memory()
+            if mem.available < 10 * 1024 * 1024 * 1024:
                 logger.info(f'free memory:{mem.available / 1024 / 1024 / 1024}G')
                 if processes > 1:
                     pool.terminate()
@@ -140,31 +130,11 @@ def main(processes=1):
 
 import sys
 
-# if __name__ == '__main__':
-#     freeze_support()
-#     res = 'restart'
-#     # 根据 CPU 核心数设置进程数：i5-11260H 为 6 核 12 线程，建议使用 8-12 个进程
-#     processes_count = min(6, mp.cpu_count())
-#     while res == 'restart':
-#         res = main(processes_count)
-#         # res = main(1)        logger.info(f'main run finish res:{res}')
-#         time.sleep(60)
-
 if __name__ == '__main__':
     freeze_support()
-    
-    # 核心修复：强制 Linux 使用 'spawn' 模式启动多进程，防止 CUDA 初始化失败
-    try:
-        mp.set_start_method('spawn', force=True)
-    except RuntimeError:
-        pass
-
     res = 'restart'
-    
-    # 强烈建议：先用 2 个进程探路，不要一上来就 6 个！
-    processes_count = 2
-    
     while res == 'restart':
-        res = main(processes_count)
+        res = main(32)
+        # res = main(1)
         logger.info(f'main run finish res:{res}')
         time.sleep(60)

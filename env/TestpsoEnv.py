@@ -1,12 +1,11 @@
-from log import logger
 from env.EnvBase import Env
 import numpy as np
 
 from functions import CEC_functions
-from matAgent.testpso import TestpsoSwarm # 原作者多种群PSO
-from matAgent.ccpso_50d import FiftyDimCCPsoSwarm # 50d下的CCPso
-import random
+from matAgent.testpso import TestpsoSwarm
 from utils.tensor_utils import to_numpy_array
+
+import random
 
 a = '''
 -266.0531289
@@ -79,18 +78,17 @@ class function_wrapper:
 
 
 class TestpsoEnv(Env):
-    def __init__(self, show=False, al_type='ccpso_50d', fixed_fun_num=None):
-        self.al_type = al_type
-        self.fixed_fun_num = fixed_fun_num # 记录固定测试函数
-        super().__init__(obs_shape=(1,), action_shape=(50 ,), action_low=-1, action_high=1)
-
+    def __init__(self, show=False, dim=50, max_fe=20000, n_part=40, fun_num=None):
+        super().__init__(obs_shape=(1,), action_shape=(50,), action_low=-1, action_high=1)
         self.pso_swarm = None
-        self.optimizer = None
-
         self.fit_value = [0., 0., 0., 0., 0.]
 
         self.step_num = 0
         self.show_flag = show
+        self.n_dim = dim
+        self.max_fe = max_fe
+        self.n_part = n_part
+        self.fixed_fun_num = fun_num
 
         self.fun_num = -1
         self.min_value = 0
@@ -102,44 +100,22 @@ class TestpsoEnv(Env):
 
         :return: next_state
         """
-        n_dim = 50
-        self.max_fe = 20000
-        n_part = 40
+        n_dim = self.n_dim
+        n_part = self.n_part
         self.n_run = n_run = max(1, int(self.max_fe / n_part))
         show = self.show_flag
         pos_max = np.array((10, 10))
         pos_min = np.array((-10, -10))
         n_group = 1
-        # 分支判断是Pso还是CCPso
-        if self.al_type == 'ccpso_50d':
-            targetSwarm = FiftyDimCCPsoSwarm
-        elif self.al_type == 'testpso':
-            targetSwarm = TestpsoSwarm
-        else:
-            # 【强烈建议加上这行】防止拼写错误导致找不到算法而崩溃
-            raise ValueError(f"未知的算法类型: {self.al_type}")
-        if self.fixed_fun_num is not None:
-            fun_num = self.fixed_fun_num
-        else:
-            fun_num = random.randint(1, 28)
-
+        targetSwarm = TestpsoSwarm
+        fun_num = self.fixed_fun_num if self.fixed_fun_num is not None else random.randint(1, 28)
         self.fun_num = fun_num
         self.min_value = mins[fun_num - 1]
         print(f'初始化测试函数：{fun_num},最小值:{self.min_value}')
 
-        fun_class = function_wrapper(50, fun_num)
-        # self.pso_swarm = targetSwarm(n_run, n_part, show, fun_class.fun, n_dim, 100, -100, {'max_fes': 20000})
-        self.pso_swarm = targetSwarm(
-            n_run,
-            n_part,
-            show,
-            fun_class.fun,
-            n_dim,
-            100,
-            -100,
-            {'max_fes': self.max_fe, 'group': 5},
-        )
-        self.optimizer = self.pso_swarm
+        fun_class = function_wrapper(n_dim, fun_num)
+        self.pso_swarm = targetSwarm(n_run, n_part, show, fun_class.fun, n_dim, 100, -100,
+                                     {'max_fes': self.max_fe})
         # self.min_value = 1e-17
 
         self.fit_value = [0., 0., 0., 0., 0.]
@@ -174,7 +150,7 @@ class TestpsoEnv(Env):
         if action is None:
             action = np.zeros(self.action_space.shape[0], dtype=float)
         else:
-            action = np.asarray(to_numpy_array(action))
+            action = np.asarray(to_numpy_array(action), dtype=float)
         done = False
         self.step_num += 1
 
@@ -230,12 +206,10 @@ class TestpsoEnv(Env):
             print('action:{} next_state:{} reward:{} done:{} best:{}'.format(action, next_state, reward, done,
                                                                              self.pso_swarm.history_best_fit))
         if done:
-            max_steps = 20000 // 40
-            progress_pct = (self.step_num / max_steps) * 100
-
-            res = (f"[Step: {self.step_num}/{max_steps} ({progress_pct:.1f}%)] "
-                   f"测试函数: {self.fun_num} | 目标值: {self.min_value} | 最终结果: {self.pso_swarm.history_best_fit:.4e}")
-
-            # 使用 logger 输出，每一局只输出 1 条！200 局就只输出 200 条！
-            logger.info(res)
+            res = f'迭代次数：{self.step_num},测试函数:{self.fun_num}，函数目标值：{self.min_value},运行结果：{self.pso_swarm.history_best_fit}'
+            print(res)
+            if self.show_flag:
+                print('迭代次数：{}'.format(self.step_num))
+            with open('res2.json', 'a', encoding='utf-8') as f:
+                f.write(f'{res}\n')
         return np.array(next_state), reward, done, None

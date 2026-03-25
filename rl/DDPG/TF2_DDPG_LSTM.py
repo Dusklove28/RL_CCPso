@@ -9,7 +9,7 @@ from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, LSTM, Lambda, Concatenate
 from tensorflow.keras.optimizers import Adam
 
-from TF2_DDPG_Basic import OrnsteinUhlenbeckNoise, NormalNoise
+from rl.DDPG.DDPG_Basic import OrnsteinUhlenbeckNoise, NormalNoise
 
 # Original paper: https://arxiv.org/pdf/1509.02971.pdf
 

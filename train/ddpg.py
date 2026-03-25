@@ -1,5 +1,5 @@
 from log import logger
-from rl.DDPG.PT_DDPG_Basic import DDPG
+from rl.DDPG.DDPG_Basic import DDPG
 
 
 ORIGINAL_RLEPSO_ACTOR_UNITS = (16, 32, 32, 32, 64, 64)

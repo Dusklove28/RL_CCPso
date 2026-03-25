@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from matAgent.hrlepso_base import *
-from rl.DDPG.TF2_DDPG_Basic import DDPG
+from rl.DDPG.DDPG_Basic import DDPG
 from env.HrelpsoBaseEnv import HrlepsoEnv
 from utils.tensor_utils import to_numpy_array
 
