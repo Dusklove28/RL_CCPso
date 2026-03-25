@@ -315,14 +315,27 @@ class DDPG:
             abs_errors = torch.sum(torch.abs(td_error), dim=1).detach().cpu().numpy()
             self.memory.batch_update(tree_idx, abs_errors)
 
+        for p in self.critic.parameters():
+            p.requires_grad = False
+
         actor_actions = self.actor(states)
         actor_loss = -torch.mean(self.critic(states, actor_actions))
         self.actor_optimizer.zero_grad(set_to_none=True)
         actor_loss.backward()
         self.actor_optimizer.step()
 
+        # 计算完后务必解冻 Critic
+        for p in self.critic.parameters():
+            p.requires_grad = True
+        # --------------------------------------------------------------------
+
         self.summaries['critic_loss'] = float(critic_loss.detach().cpu().item())
         self.summaries['actor_loss'] = float(actor_loss.detach().cpu().item())
+
+        # ---------------- 改动 2：将软更新移动到这里（只有网络更新后才软更新）----
+        update_target_weights(self.actor, self.actor_target, tau=self.tau)
+        update_target_weights(self.critic, self.critic_target, tau=self.tau)
+        # -------------------------------------------------------------------
 
     def train(self, max_episodes=50, max_epochs=8000, max_steps=500, save_freq=50, task_path=None, train_num=0):
         save_freq = 1 if save_freq < 1 else save_freq
@@ -363,8 +376,8 @@ class DDPG:
             self.remember(cur_state, action_tensor, reward, next_state, done)
             self.replay()
 
-            update_target_weights(self.actor, self.actor_target, tau=self.tau)
-            update_target_weights(self.critic, self.critic_target, tau=self.tau)
+            # update_target_weights(self.actor, self.actor_target, tau=self.tau)
+            # update_target_weights(self.critic, self.critic_target, tau=self.tau)
 
             cur_state = next_state
             total_reward += reward
