@@ -1,104 +1,95 @@
 import numpy as np
-from matAgent.baseAgent import MatSwarm
+from matAgent.testpso import TestpsoSwarm  # 直接继承原版，复用它的 CLPSO/FDR 目标计算逻辑
 
 
-class CCPsoSwarm(MatSwarm):
-    def __init__(self, n_run, n_part, show, fun, n_dim, pos_max, pos_min, config_dic):
-        super().__init__(n_run, n_part, show, fun, n_dim, pos_max, pos_min, config_dic)
-        self.name = 'CC_PSO'
+class FiftyDimCCPsoSwarm(TestpsoSwarm):
+    optimizer_name = 'CCPSO_50D'
+    action_space = 10
+    obs_space = 1
 
-        # 算法所需的状态变量
-        self.vs = np.zeros_like(self.xs)
-        self.p_best = np.zeros_like(self.xs)
-        self.atom_history_best_fits = np.zeros(self.n_part)
-        self.g_best = np.zeros(n_dim)
-        self.g_best_index = 0
-        self.fits = np.zeros(self.n_part)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = '50D_CC_PSO'
+        # 统一式特需：记录上一代的位置 X(t-1)
+        self.xs_old = self.xs.copy()
 
-        # 统一式特有的变量：记录上一代的位置 X(t-1)
-        self.xs_old = np.zeros_like(self.xs)
+    def run_once(self, actions):
+        if actions is None:
+            actions = np.zeros(self.action_space * self.n_group)
+        if self.show:
+            print('{}|best fit:{}'.format(self.fe_num / self.fe_max, self.history_best_fit))
 
-        # 评价次数记录（用于计算进度）
-        self.fe_max = config_dic.get('max_fes', 20000) if config_dic else 20000
-        self.fe_num = 0
+        new_xs = np.zeros_like(self.xs)
 
-        self.init()
-
-    def init(self):
-        # 随机初始化位置和速度
-        self.xs = np.random.uniform(self.pos_min, self.pos_max, self.xs.shape)
-        self.vs = np.random.uniform(self.pos_min, self.pos_max, self.xs.shape)
-        self.xs_old = self.xs.copy()  # 第一代时，X(t-1) 就等于 X(t)
-
-        self.fits = self.fun(self.xs)
-        self.fe_num += self.n_part
-        self.init_finish = True
-
-        # 初始化历史最优
-        self.g_best_index = np.argmin(self.fits)
-        self.history_best_fit = self.fits[self.g_best_index]
-        self.g_best = self.xs[self.g_best_index].copy()
-        self.atom_history_best_fits = self.fits.copy()
-        self.p_best = self.xs.copy()
-
-    def update_best(self):
-        # 更新个体最优 Pbest
         for i in range(self.n_part):
-            if self.fits[i] < self.atom_history_best_fits[i]:
-                self.p_best[i] = self.xs[i].copy()
-                self.atom_history_best_fits[i] = self.fits[i]
+            fdr_deta_fitness = self.atom_history_best_fits[i] - self.atom_history_best_fits
 
-        # 更新全局最优 Gbest
-        self.g_best_index = np.argmin(self.fits)
-        if self.history_best_fit > self.fits[self.g_best_index]:
-            self.history_best_fit = self.fits[self.g_best_index]
-            self.g_best = self.xs[self.g_best_index].copy()
-            self.best_update()
+            # 和训练时的 group 配置保持一致
+            action = actions[
+                i % self.n_group * self.action_space:
+                i % self.n_group * self.action_space + self.action_space
+            ]
 
-    def run_once(self, action):
-        # 1. 解析动作并映射到合理范围（DDPG网络输出的 action 范围固定是 [-1, 1]）
-        #    如果 action[0] 是 -1，w = 0.1；如果是 1，w = 0.9。下同。
-        w = action[0] * 0.4 + 0.5  # 将 [-1, 1] 映射到惯性权重 [0.1, 0.9]
-        c1 = action[1] * 1.0 + 1.5  # 将 [-1, 1] 映射到认知因子 [0.5, 2.5]
-        c2 = action[2] * 1.0 + 1.5  # 将 [-1, 1] 映射到社会因子 [0.5, 2.5]
-        P_ECon = action[3] * 0.5 + 0.5  # 将 [-1, 1] 映射到期望收敛度 [0.0, 1.0]
+            w = action[7] * 0.4 + 0.5
+            r1 = action[1] * 1.5 + 1.5
+            r2 = action[2] * 1.5 + 1.5
+            r5 = action[5] * 1.5 + 1.5
+            r6 = action[6] * 1.5 + 1.5
 
-        r1 = np.random.uniform(0, 1, (self.n_part, self.n_dim))
-        r2 = np.random.uniform(0, 1, (self.n_part, self.n_dim))
+            # 【核心改动 1】：提取 action[0] 作为收敛性控制目标 P_ECon
+            P_ECon = action[0] * 0.5 + 0.5  # 映射到 [0, 1] 之间
 
-        c1_r1 = c1 * r1
-        c2_r2 = c2 * r2
-        C = c1_r1 + c2_r2
+            r = np.array([r1, r2, 0, 0, r5, r6])
+            r = r / (np.sum(r) + 1e-10) * (action[8] + 1) * 4
+            r1, r2, r3, r4, r5, r6 = r
 
-        # 2. 计算等效吸引中心 Q (为避免除零加上 1e-16)
-        Q = (c1_r1 * self.p_best + c2_r2 * self.g_best) / (C + 1e-16)
+            mutation_rate = (action[9] + 1) * 0.01
 
-        # 3. 计算统一式系数 a1 和 a2
-        a1 = 1 + w - C
-        a2 = -w
+            for d in range(self.n_dim):
+                # 完全保留原版的异构目标寻找逻辑
+                clpso_target = self.p_best[self.fid[i, d], d]
 
-        # 4. 计算统一式的期望位置偏差 X_Q
-        X_Q = a1 * (self.xs - Q) + a2 * (self.xs_old - Q)
+                xid = self.xs[i, d]
+                distance = xid - self.p_best[:, d]
+                distance[i] = np.inf
+                fdr = fdr_deta_fitness / (distance + 1e-250)
+                j_index = np.argmax(fdr)
+                fdr_target = self.p_best[j_index, d]
 
-        # 5. 计算实际收敛度 P_Con (这里以各粒子分开的 1-范数 为例)
-        P_Con = np.linalg.norm(X_Q, ord=1, axis=1, keepdims=True)
-        P_Con[P_Con == 0] = 1e-16  # 避免除以0
+                gbest_target = self.g_best[d]
+                pbest_target = self.p_best[i, d]
 
-        # 6. 应用收敛性控制公式更新位置
-        new_xs = Q + (P_ECon / P_Con) * X_Q
+                # 【核心改动 2】：计算总引力 C 和等效中心 Q
+                C = r1 + r2 + r5 + r6
 
-        # 7. 越界处理
+                # 计算目标点的加权中心
+                Q = (r1 * clpso_target + r2 * fdr_target + r5 * gbest_target + r6 * pbest_target) / (C + 1e-16)
+
+                # 计算统一式系数
+                a1 = 1 + w - C
+                a2 = -w
+
+                # 计算自然期望偏差 X_Q
+                X_Q = a1 * (self.xs[i, d] - Q) + a2 * (self.xs_old[i, d] - Q)
+
+                # 计算一维的实际收敛度 P_Con (避免除零)
+                P_Con = np.abs(X_Q)
+                if P_Con == 0:
+                    P_Con = 1e-16
+
+                # 应用收敛性控制公式更新当前维度的位置
+                new_xs[i, d] = Q + (P_ECon / P_Con) * X_Q
+
+            # 保留原版的突变逻辑以求公平
+            if np.random.random() < mutation_rate * self.flag[i]:
+                new_xs[i] = np.random.uniform(self.pos_min, self.pos_max, self.xs[i].shape)
+
+        # 越界处理
         new_xs = np.clip(new_xs, self.pos_min, self.pos_max)
 
-        # 8. 状态迭代更替
-        self.xs_old = self.xs.copy()  # 当前位置变成老位置 X(t-1)
-        self.xs = new_xs  # 更新当前位置 X(t)
+        # 状态迭代
+        self.xs_old = self.xs.copy()
+        self.xs = new_xs
 
-        # 9. 重新评估适应度并更新 Best
         self.fits = self.fun(self.xs)
-        self.fe_num += self.n_part
         self.update_best()
-
-    def get_state(self):
-        # 兼容原环境：返回训练进度作为 RL 的 State 观察值
-        return [(self.fe_num / self.fe_max - 0.5) * 2]
