@@ -12,8 +12,8 @@ try:
     from matAgent.clpso import ClpsoSwarm
     from matAgent.testpso import TestpsoSwarm
     from matAgent.rlepso import RlepsoSwarm
-    from matAgent.ccpso_50d import FiftyDimCCPsoSwarm
-    from matAgent.rl_ccpso_eval import RlCCPsoSwarm
+    from matAgent.ccpso import FiftyDimCCPsoSwarm
+    from matAgent.ccpso_eval import RlCCPsoSwarm
 except Exception:
     pass
 

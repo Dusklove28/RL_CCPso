@@ -1,5 +1,5 @@
 import numpy as np
-from matAgent.ccpso_50d import FiftyDimCCPsoSwarm
+from matAgent.ccpso import FiftyDimCCPsoSwarm
 from utils.tensor_utils import to_numpy_array
 
 class RlCCPsoSwarm(FiftyDimCCPsoSwarm):
